@@ -1,0 +1,72 @@
+conv2d layer
+	初期化
+		input_width
+		input_height
+		input_channel
+		padding
+		channel
+		stride
+		activation function
+	メンバ
+		filter: width x height x channel (3 dims vector)
+		lastindata: 最後に入力されたデータ (backwardではこれに書き込む)
+		lastoutdata: 最後に出力したデータ (forwardではこれに書き込む)
+	forward/backward
+		input: batch of 3 dims vector (4 dims vector)
+		output: batch of 3 dims vector (4 dims vector)
+
+pool layer
+	初期化
+		input_width
+		input_height
+		input_channel
+		channel
+		stride
+		pool function
+	メンバ
+		lastindata: 最後に入力されたデータ (backwardではこれに書き込む)
+		lastoutdata: 最後に出力したデータ (forwardではこれに書き込む)
+	forward/backward
+		input: batch of 3 dims vector (4 dims vector)
+		output: batch of 3 dims vector (4 dims vector)
+
+flatten
+	vectorの次元変換
+	forward
+		3次元 -> 1次元
+	backward
+		1次元 -> 3次元
+
+dense layer
+	初期化
+		input_width
+		input_height
+		activation function
+	メンバ
+		lastindata: 最後に入力されたデータ (backwardではこれに書き込む)
+		lastoutdata: 最後に出力したデータ (forwardではこれに書き込む)
+	forward/backward
+		input: width x height x channel x batch
+		output: width x height x channel x batch
+
+
+activationで必要なこと
+	チャネルごとは別でやればいい
+	とりあえずlinear, relu, sigmoidがあればいい
+
+畳み込み層入力
+	inheight x inwidth x channel
+
+channelに対してどういう演算をするか
+
+conv2dのパラメータ
+	バッチサイズ
+	入力のチャネル数
+	出力のチャネル数
+	入力の縦横
+	縦横のパディング
+	カーネルのサイズ
+	ストライド
+	
+	出力の縦横 <- 入力の縦横、縦横のパディング、カーネルサイズから計算できる
+

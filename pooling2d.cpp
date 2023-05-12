@@ -218,7 +218,7 @@ tensor_t MaxPooling2D::backward(tensor_t& data, flt learningrate) {
 	auto batchsize = data.size();
 	auto paddedinputgrad = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto inputgrad = tensor_t(batchsize, vec_t(this->channels * this->in_height * this->in_width));
-    for (std::size_t b = 0; b < batchsize; b++) {
+	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->out_len);
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->out_height; y++) {

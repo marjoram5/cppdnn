@@ -45,6 +45,8 @@ tensor_t FullyConnected::forward(tensor_t& data) {
 	auto batchsize = data.size();
 	this->lastdata = data;
 	auto ret = tensor_t(batchsize);
+
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->in_len);
 		for (std::size_t i = 0; i < this->out_len; i++) {
@@ -58,11 +60,19 @@ tensor_t FullyConnected::forward(tensor_t& data) {
 	return this->activation->forward(ret);
 }
 
-tensor_t FullyConnected::backward(tensor_t& data, flt learningrate) {
+tensor_t FullyConnected::backward(tensor_t& data) {
 	data = this->activation->backward(data);
 	assert(data.size() == this->lastdata.size());
 	auto batchsize = data.size();
 	auto inputgrad = tensor_t(batchsize, vec_t(this->in_len));
+	this->weight_grads = std::vector<tensor_t>(
+		batchsize, tensor_t(
+			this->out_len, vec_t(
+				this->in_len, 0.0)));
+	this->bias_grads = tensor_t(
+		batchsize, vec_t(
+			this->out_len, 0.0));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->out_len);
 		for (std::size_t i = 0; i < this->in_len; i++) {
@@ -73,13 +83,26 @@ tensor_t FullyConnected::backward(tensor_t& data, flt learningrate) {
 			inputgrad[b][i] = sum;
 		}
 	}
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t i = 0; i < this->out_len; i++) {
 			for (std::size_t j = 0; j < this->in_len; j++) {
-				this->weight[i][j] -= learningrate * data[b][i] * this->lastdata[b][j];
+				this->weight_grads[b][i][j] += data[b][i] * this->lastdata[b][j];
 			}
-			this->bias[i] -= learningrate * data[b][i];
+			this->bias_grads[b][i] += data[b][i];
 		}
 	}
 	return inputgrad;
+}
+
+void FullyConnected::update(flt learningrate) {
+	auto batchsize = this->weight_grads.size();
+	for (std::size_t b = 0; b < batchsize; b++) {
+		for (std::size_t i = 0; i < this->out_len; i++) {
+			for (std::size_t j = 0; j < this->in_len; j++) {
+				this->weight[i][j] -= learningrate * this->weight_grads[b][i][j];
+			}
+			this->bias[i] -= learningrate * this->bias_grads[b][i];
+		}
+	}
 }

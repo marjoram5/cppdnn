@@ -32,7 +32,8 @@ public:
 					 std::size_t k_h, std::size_t k_w,
 					 std::size_t s=1);
 	tensor_t forward(tensor_t& data);
-	tensor_t backward(tensor_t& data, flt learningrate); // learningrate is just ignored
+	tensor_t backward(tensor_t& data); 
+	inline void update(flt learningrate) {} // do nothing
 };
 
 class MaxPooling2D : public Layer {
@@ -65,5 +66,6 @@ public:
 				 std::size_t k_h, std::size_t k_w,
 				 std::size_t s=1);
 	tensor_t forward(tensor_t& data);
-	tensor_t backward(tensor_t& data, flt learningrate);  // learningrate is just ignored
+	tensor_t backward(tensor_t& data);
+	inline void update(flt learningrate) {} // do nothing
 };

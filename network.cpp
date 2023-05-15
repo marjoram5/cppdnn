@@ -33,7 +33,11 @@ tensor_t Network::predict(tensor_t& data) {
 void Network::backward(tensor_t& data, double learningrate) {
 	auto grad = this->loss->backward(data);
 	for (auto iter = this->layers.rbegin(); iter != this->layers.rend(); iter++) {
-		grad = (*iter)->backward(grad, learningrate);
+		grad = (*iter)->backward(grad);
+	}
+#pragma omp parallel for
+	for (auto iter = this->layers.begin(); iter != this->layers.end(); iter++) {
+		(*iter)->update(learningrate);
 	}
 }
 

@@ -18,6 +18,7 @@ tensor_t Sigmoid::forward(tensor_t& data) {
 	auto batchsize = data.size();
 	auto len = data[0].size();
 	auto ret = tensor_t(batchsize);
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t i = 0; i < data[b].size(); i++) {
 			ret[b][i] = 1.0/(std::exp(-data[b][i])+1.0);
@@ -31,6 +32,7 @@ tensor_t Sigmoid::backward(tensor_t& data) {
 	auto batchsize = data.size();
 	auto len = data[0].size();
 	auto ret = tensor_t(batchsize, vec_t(len));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(this->lastdata[b].size() == data[b].size());
 		for (std::size_t i = 0; i < data[b].size(); i++) {
@@ -46,6 +48,7 @@ tensor_t SoftMax::forward(tensor_t& data) {
 	auto batchsize = data.size();
 	auto len = data[0].size();
 	auto ret = tensor_t(batchsize, vec_t(len));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		flt maxelm = *std::max_element(data[b].begin(), data[b].end());
 		flt sum = 0.0;
@@ -70,6 +73,7 @@ tensor_t ReLU::forward(tensor_t& data) {
 	auto len = data[0].size();
 	this->lastdata = data;
 	auto ret = tensor_t(batchsize, vec_t(len));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t i = 0; i < data[b].size(); i++) {
 			ret[b][i] = std::max((flt)0.0, data[b][i]);
@@ -83,6 +87,7 @@ tensor_t ReLU::backward(tensor_t& data) {
 	auto batchsize = data.size();
 	auto len = data[0].size();
 	auto ret = tensor_t(batchsize, vec_t(len));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->lastdata[b].size());
 		for (std::size_t i = 0; i < data[b].size(); i++) {

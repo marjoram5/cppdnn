@@ -22,10 +22,12 @@ private:
 	const std::size_t w_padding;
 	const std::size_t h_stride;
 	const std::size_t w_stride;
-	std::vector<std::vector<tensor_t>> filter;
 	// filter = (out_channels * in_channels * filter_height * filter_width)
-	vec_t bias;
+	std::vector<std::vector<tensor_t>> filter;
+	std::vector<std::vector<std::vector<tensor_t>>> filter_grads;
 	// bias = (out_channels)
+	vec_t bias;
+	tensor_t bias_grads;
 	std::shared_ptr<Activation> activation;
 	// reference wrappers
 	inline flt& unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
@@ -39,5 +41,6 @@ public:
 				  std::size_t f_h, std::size_t f_w,
 				  ActivationType act, std::size_t s=1);
 	tensor_t forward(tensor_t& data);
-	tensor_t backward(tensor_t& data, flt learningrate);
+	tensor_t backward(tensor_t& data);
+	void update(flt learningrate);
 };

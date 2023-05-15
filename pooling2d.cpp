@@ -58,6 +58,7 @@ tensor_t AveragePooling2D::forward(tensor_t& data) {
 	this->lastdata = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 
 	// padding
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->in_height; y++) {
@@ -69,6 +70,7 @@ tensor_t AveragePooling2D::forward(tensor_t& data) {
 	}
 	auto ret = tensor_t(batchsize, vec_t(this->out_len));
 	// average pooling
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->out_height; y++) {
@@ -87,11 +89,12 @@ tensor_t AveragePooling2D::forward(tensor_t& data) {
 	return ret;
 }
 
-tensor_t AveragePooling2D::backward(tensor_t& data, flt learningrate) {
+tensor_t AveragePooling2D::backward(tensor_t& data) {
 	assert(data.size() == this->lastdata.size());
 	auto batchsize = data.size();
 	auto paddedinputgrad = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto inputgrad = tensor_t(batchsize, vec_t(this->channels * this->in_height * this->in_width));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->out_len);
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
@@ -107,6 +110,7 @@ tensor_t AveragePooling2D::backward(tensor_t& data, flt learningrate) {
 		}
 	}
 	// unpadding
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->in_height; y++) {
@@ -118,7 +122,6 @@ tensor_t AveragePooling2D::backward(tensor_t& data, flt learningrate) {
 	}
 	return inputgrad;
 }
-
 
 flt& MaxPooling2D::unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x) {
 	assert(t.size() == this->channels * this->in_height * this->in_width);
@@ -179,6 +182,7 @@ tensor_t MaxPooling2D::forward(tensor_t& data) {
 	this->w_selected = this->h_selected;
 	this->lastdata = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	// padding
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->channels * this->in_height * this->in_width);
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
@@ -191,6 +195,7 @@ tensor_t MaxPooling2D::forward(tensor_t& data) {
 	}
 	auto ret = tensor_t(batchsize, vec_t(this->out_len));
 	// max pooling
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->out_height; y++) {
@@ -213,11 +218,12 @@ tensor_t MaxPooling2D::forward(tensor_t& data) {
 	return ret;
 }
 
-tensor_t MaxPooling2D::backward(tensor_t& data, flt learningrate) {
+tensor_t MaxPooling2D::backward(tensor_t& data) {
 	assert(data.size() == this->lastdata.size());
 	auto batchsize = data.size();
 	auto paddedinputgrad = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto inputgrad = tensor_t(batchsize, vec_t(this->channels * this->in_height * this->in_width));
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->out_len);
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
@@ -231,6 +237,7 @@ tensor_t MaxPooling2D::backward(tensor_t& data, flt learningrate) {
 		}
 	}
 	// unpadding
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t ch = 0; ch < this->channels; ch++) {
 			for (std::size_t y = 0; y < this->in_height; y++) {

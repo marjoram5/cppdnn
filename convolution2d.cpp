@@ -104,6 +104,7 @@ tensor_t Convolution2D::forward(tensor_t& data) {
 	this->lastdata = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto ret = tensor_t(batchsize, vec_t(this->out_len));
 	// padding
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->in_channels * this->in_height * this->in_width);
 		for (std::size_t ch = 0; ch < this->in_channels; ch++) {
@@ -115,6 +116,7 @@ tensor_t Convolution2D::forward(tensor_t& data) {
 		}
 	}
 	// convolution
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t och = 0; och < this->out_channels; och++) {
 			for (std::size_t y = 0; y < this->out_height; y++) {
@@ -135,13 +137,21 @@ tensor_t Convolution2D::forward(tensor_t& data) {
 	return this->activation->forward(ret);
 }
 
-tensor_t Convolution2D::backward(tensor_t& data, flt learningrate) {
+tensor_t Convolution2D::backward(tensor_t& data) {
 	data = this->activation->backward(data);
 	assert(data.size() == this->lastdata.size());
 	auto batchsize = data.size();
 	auto paddedinputgrad = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto inputgrad = tensor_t(batchsize, vec_t(this->in_channels*this->in_height*this->in_width));
+	this->filter_grads = std::vector<std::vector<std::vector<tensor_t>>>(
+		batchsize, std::vector<std::vector<tensor_t>>(
+			this->out_channels, std::vector<tensor_t>(
+				this->in_channels, tensor_t(
+					this->filter_height, vec_t(
+						this->filter_width, 0.0)))));
+	this->bias_grads = tensor_t(batchsize, vec_t(this->out_channels, 0.0));
 	// compute input gradients
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(data[b].size() == this->out_len);
 		for (std::size_t och = 0; och < this->out_channels; och++) {
@@ -159,6 +169,7 @@ tensor_t Convolution2D::backward(tensor_t& data, flt learningrate) {
 			}
 		}
 	}
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		// unpadding
 		for (std::size_t ich = 0; ich < this->in_channels; ich++) {
@@ -169,6 +180,7 @@ tensor_t Convolution2D::backward(tensor_t& data, flt learningrate) {
 			}
 		}
 	}
+#pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t och = 0; och < this->out_channels; och++) {
 			// compute filter gradients
@@ -181,7 +193,7 @@ tensor_t Convolution2D::backward(tensor_t& data, flt learningrate) {
 								filtergrad += this->paddedref(this->lastdata[b], ich, y*h_stride+ky, x*w_stride+kx) * this->outputref(data[b], och, y, x);
 							}
 						}
-						this->filter[och][ich][ky][kx] -= learningrate * filtergrad;
+						this->filter_grads[b][och][ich][ky][kx] += filtergrad;
 					}
 				}
 			}
@@ -189,10 +201,27 @@ tensor_t Convolution2D::backward(tensor_t& data, flt learningrate) {
 			flt biasgrad = 0.0;
 			for (std::size_t y = 0; y < this->out_height; y++) {
 				for (std::size_t x = 0; x < this->out_width; x++) {
-					this->bias[och] -= learningrate * this->outputref(data[b], och, y, x);
+					this->bias_grads[b][och] += this->outputref(data[b], och, y, x);
 				}
 			}
 		}
 	}
 	return inputgrad;
+}
+
+void Convolution2D::update(flt learningrate) {
+	auto batchsize = this->filter_grads.size();
+	for (std::size_t b = 0; b < batchsize; b++) {
+		for (std::size_t och = 0; och < this->out_channels; och++) {
+			for (std::size_t ich = 0; ich < this->in_channels; ich++) {
+				for (std::size_t ky = 0; ky < this->filter_height; ky++) {
+					for (std::size_t kx = 0; kx < this->filter_width; kx++) {
+						this->filter[och][ich][ky][kx] -= learningrate * this->filter_grads[b][och][ich][ky][kx];
+
+					}
+				}
+			}
+			this->bias[och] -= learningrate * this->bias_grads[b][och];
+		}
+	}
 }

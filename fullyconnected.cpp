@@ -54,7 +54,7 @@ tensor_t FullyConnected::forward(tensor_t& data) {
 			for (std::size_t j = 0; j < this->in_len; j++) {
 				sum += this->weight[i][j] * data[b][j];
 			}
-			ret[b].push_back(sum-this->bias[i]);
+			ret[b].push_back(sum+this->bias[i]);
 		}
 	}
 	return this->activation->forward(ret);

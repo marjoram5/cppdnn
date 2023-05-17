@@ -64,8 +64,23 @@ Convolution2D::Convolution2D(
 					this->filter_width, 0.0))));
 	this->bias = vec_t(this->out_channels, 0.0);
 
-	// initialize filter and bias
-	flt sigma = std::sqrt((flt)2.0/(this->filter_height*this->filter_width*this->in_channels));
+	// initialize sigma and activator
+	double sigma;
+	switch (act) {
+	case ActivationType::sigmoid:
+		//std::sqrt((flt)2.0/(this->filter_height*this->filter_width*this->in_channels));
+		sigma = std::sqrt(1.0/(this->filter_height * this->filter_width));
+		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<Sigmoid>(new Sigmoid()));
+		break;
+	case ActivationType::relu:
+		sigma = std::sqrt(2.0/(this->filter_height * this->filter_width * this->in_channels));
+		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<ReLU>(new ReLU()));
+		break;
+	default:
+		sigma = 0.05;
+		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<Linear>(new Linear()));
+		break;
+	}
 	std::random_device seed;
 	std::mt19937 rng(seed());
 	std::normal_distribution<> normaldist(0.0, sigma);
@@ -80,22 +95,6 @@ Convolution2D::Convolution2D(
 	}
 	for (std::size_t ch = 0; ch < this->out_channels; ch++) {
 		this->bias[ch] = normaldist(rng);
-	}
-
-	// initialize activator
-	switch (act) {
-	case ActivationType::sigmoid:
-		this->activation =
-			std::static_pointer_cast<Activation>(std::shared_ptr<Sigmoid>(new Sigmoid()));
-		break;
-	case ActivationType::relu:
-		this->activation =
-			std::static_pointer_cast<Activation>(std::shared_ptr<ReLU>(new ReLU()));
-		break;
-	default:
-		this->activation =
-			std::static_pointer_cast<Activation>(std::shared_ptr<Linear>(new Linear()));
-		break;
 	}
 }
 
@@ -217,7 +216,6 @@ void Convolution2D::update(flt learningrate) {
 				for (std::size_t ky = 0; ky < this->filter_height; ky++) {
 					for (std::size_t kx = 0; kx < this->filter_width; kx++) {
 						this->filter[och][ich][ky][kx] -= learningrate * this->filter_grads[b][och][ich][ky][kx];
-
 					}
 				}
 			}

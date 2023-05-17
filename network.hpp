@@ -26,6 +26,6 @@ public:
 	}
 	std::vector<double> fit(
 		std::size_t batchsize,
-		std::size_t step, flt learningrate,
+		std::size_t step, flt learningrate, flt decay,
 		tensor_t& x, tensor_t& y, LossType losstype);
 };

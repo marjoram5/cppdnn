@@ -14,16 +14,16 @@ tensor_t Linear::backward(tensor_t& data) {
 Sigmoid::Sigmoid() {}
 
 tensor_t Sigmoid::forward(tensor_t& data) {
-	this->lastdata = data;
 	auto batchsize = data.size();
 	auto len = data[0].size();
-	auto ret = tensor_t(batchsize);
+	auto ret = tensor_t(batchsize, vec_t(len));
 #pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t i = 0; i < data[b].size(); i++) {
 			ret[b][i] = 1.0/(std::exp(-data[b][i])+1.0);
 		}
 	}
+	this->lastdata = ret;
 	return ret;
 }
 

@@ -30,23 +30,28 @@ int main() {
 		}
 	}
 	auto train_y = mnist_train_labels.onehot();
-	auto batchsize = 30;
+	auto batchsize = 16;
 	auto learningrate = 0.1;
+	auto decay = 0.999;
+//	auto decay = 1.0;
+	auto sigmoid = ActivationType::sigmoid;
+	auto relu = ActivationType::relu;
+	auto act = relu;
 
 	Network nn;
-	nn.push_back(Convolution2D(1, 6, 28, 28, 28, 28, 5, 5, ActivationType::relu, 1));
-	nn.push_back(MaxPooling2D(6, 28, 28, 14, 14, 2, 2, 2));
-	nn.push_back(Convolution2D(6,16, 14, 14, 10, 10, 5, 5, ActivationType::relu, 1));
-	nn.push_back(MaxPooling2D(16, 10, 10,  5,  5, 2, 2, 2));
-	nn.push_back(FullyConnected(400, 120, ActivationType::relu));
-	nn.push_back(FullyConnected(120, 84, ActivationType::relu));
+	nn.push_back(Convolution2D(1, 6, 28, 28, 28, 28, 5, 5, act, 1));
+	nn.push_back(AveragePooling2D(6, 28, 28, 14, 14, 2, 2, 2));
+	nn.push_back(Convolution2D(6,16, 14, 14, 10, 10, 5, 5, act, 1));
+	nn.push_back(AveragePooling2D(16, 10, 10, 5,  5, 2, 2, 2));
+	nn.push_back(FullyConnected(400, 120, act));
+	nn.push_back(FullyConnected(120, 84, act));
 	nn.push_back(FullyConnected(84, 10, ActivationType::softmax));
 
-//	nn.push_back(FullyConnected(width*height, 256, ActivationType::relu));
-//	nn.push_back(FullyConnected(256, 256, ActivationType::relu));
+//	nn.push_back(FullyConnected(width*height, 256, ActivationType::sigmoid));
+//	nn.push_back(FullyConnected(256, 256, ActivationType::sigmoid));
 //	nn.push_back(FullyConnected(256, 10, ActivationType::softmax));
 	std::cout << "optimizing parameters..." << std::endl;
-	auto history = nn.fit(batchsize, num/batchsize, learningrate, train_x, train_y, LossType::squared);
+	auto history = nn.fit(batchsize, num/batchsize, learningrate, decay, train_x, train_y, LossType::squared);
 //	return 0;
 	std::cout << "loading the test data..." << std::endl;
 	auto mnist_test_images = MNIST::Images<flt>("../mnist/t10k-images-idx3-ubyte");

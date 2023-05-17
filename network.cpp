@@ -43,7 +43,7 @@ void Network::backward(tensor_t& data, double learningrate) {
 
 std::vector<double> Network::fit(
 	std::size_t batchsize,
-	std::size_t step, flt learningrate,
+	std::size_t step, flt learningrate, flt decay,
 	tensor_t& x, tensor_t& y, LossType losstype) {
 	this->initloss(losstype);
 	std::vector<double> history;
@@ -64,15 +64,15 @@ std::vector<double> Network::fit(
 			auto batchidx= std::distance(batchy[b].begin(), std::max_element(batchy[b].begin(), batchy[b].end()));
 			cnt += testidx == batchidx;
 		}
-		learningrate *= 0.9992;
+		learningrate *= decay;
 		this->backward(diff, learningrate);
 		auto loss_step = this->loss->forward(testy, batchy);
 		history.push_back(loss_step);
-		std::cout << "\r";
+		std::cout << std::flush << "\r";
 		std::cout << "current step: " << currentstep+1 << "/" << step
-				  << ", learning rate: " << std::setprecision(10) << learningrate
+				  << ", lr: " << std::setprecision(10) << learningrate
 				  << ", loss: " << std::fixed << std::setprecision(8) << loss_step
-				  << ", accuracy: " << std::fixed << std::setprecision(2) << std::setw(6) << (double)cnt*100/batchsize << "%" << std::flush;
+				  << ", accuracy: " << std::fixed << std::setprecision(2) << std::setw(6) << (double)cnt*100/batchsize << "%";
 	}
 	std::cout << std::endl;
 	return history;

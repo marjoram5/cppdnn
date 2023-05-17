@@ -10,6 +10,6 @@
 #include <random>
 #include <cassert>
 
-using flt = double;
+using flt = float;
 using vec_t = std::vector<flt>;
 using tensor_t = std::vector<vec_t>;

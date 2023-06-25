@@ -24,11 +24,10 @@ private:
 	const std::size_t w_stride;
 	// filter = (out_channels * in_channels * filter_height * filter_width)
 	std::vector<std::vector<tensor_t>> filter;
-	std::vector<std::vector<std::vector<tensor_t>>> filter_grads;
+	std::vector<std::vector<std::vector<tensor_t>>> filtergrad;
 	// bias = (out_channels)
 	vec_t bias;
-	tensor_t bias_grads;
-	std::shared_ptr<Activation> activation;
+	tensor_t biasgrad;
 	// reference wrappers
 	inline flt& unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
 	inline flt& paddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);

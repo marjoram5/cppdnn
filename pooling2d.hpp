@@ -22,6 +22,7 @@ private:
 	const std::size_t w_padding;
 	const std::size_t h_stride;
 	const std::size_t w_stride;
+	tensor_t lastdata;
 	flt& unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
 	flt& paddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
 	flt& outputref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
@@ -33,7 +34,7 @@ public:
 					 std::size_t s=1);
 	tensor_t forward(tensor_t& data);
 	tensor_t backward(tensor_t& data); 
-	inline void update(flt learningrate) {} // do nothing
+	void update(flt learningrate);
 };
 
 class MaxPooling2D : public Layer {
@@ -53,6 +54,7 @@ private:
 	const std::size_t w_padding;
 	const std::size_t h_stride;
 	const std::size_t w_stride;
+	tensor_t lastdata;
 	flt& unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
 	flt& paddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
 	flt& outputref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x);
@@ -67,5 +69,5 @@ public:
 				 std::size_t s=1);
 	tensor_t forward(tensor_t& data);
 	tensor_t backward(tensor_t& data);
-	inline void update(flt learningrate) {} // do nothing
+	void update(flt learningrate);
 };

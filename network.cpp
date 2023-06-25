@@ -1,13 +1,10 @@
 #include "util.hpp"
-#include "activation.hpp"
 #include "layer.hpp"
+#include "activation.hpp"
 #include "convolution2d.hpp"
 #include "pooling2d.hpp"
 #include "fullyconnected.hpp"
 #include "network.hpp"
-
-#include <iomanip>
-#include <algorithm>
 
 Network::Network(){}
 
@@ -19,10 +16,16 @@ void Network::initloss(LossType losstype) {
 	case crossentropy:
 		this->loss = std::static_pointer_cast<Loss>(std::shared_ptr<CrossEntropy>(new CrossEntropy()));
 		break;
+	case hinge:
+		this->loss = std::static_pointer_cast<Loss>(std::shared_ptr<Hinge>(new Hinge()));
+		break;
+	case squaredhinge:
+		this->loss = std::static_pointer_cast<Loss>(std::shared_ptr<SquaredHinge>(new SquaredHinge()));
+		break;
 	}
 }
 
-tensor_t Network::predict(tensor_t& data) {
+tensor_t Network::forward(tensor_t& data) {
 	auto ret = data;
 	for (auto& layer: this->layers) {
 		ret = layer->forward(ret);
@@ -30,8 +33,8 @@ tensor_t Network::predict(tensor_t& data) {
 	return ret;
 }
 
-void Network::backward(tensor_t& data, double learningrate) {
-	auto grad = this->loss->backward(data);
+void Network::backward(tensor_t& predicted, tensor_t& train, flt learningrate) {
+	auto grad = this->loss->backward(predicted, train);
 	for (auto iter = this->layers.rbegin(); iter != this->layers.rend(); iter++) {
 		grad = (*iter)->backward(grad);
 	}
@@ -53,26 +56,17 @@ std::vector<double> Network::fit(
 			batchx.push_back(x[(batchsize*currentstep+i)%x.size()]);
 			batchy.push_back(y[(batchsize*currentstep+i)%y.size()]);
 		}
-		auto testy = this->predict(batchx);
-		tensor_t diff(batchsize);
-		std::size_t cnt = 0;
-		for (std::size_t b = 0; b < batchsize; b++) {
-			for (std::size_t i = 0; i < testy[b].size(); i++) {
-				diff[b].push_back((flt)(testy[b][i] - batchy[b][i])/batchsize);
-			}
-			auto testidx = std::distance(testy[b].begin(), std::max_element(testy[b].begin(), testy[b].end()));
-			auto batchidx= std::distance(batchy[b].begin(), std::max_element(batchy[b].begin(), batchy[b].end()));
-			cnt += testidx == batchidx;
-		}
+		auto predictedy = this->forward(batchx);
+		this->backward(predictedy, batchy, learningrate);
 		learningrate *= decay;
-		this->backward(diff, learningrate);
-		auto loss_step = this->loss->forward(testy, batchy);
+		auto [loss_step, cnt] = this->loss->forward(predictedy, batchy);
 		history.push_back(loss_step);
-		std::cout << std::flush << "\r";
+		std::cout << "\r" << std::flush;
 		std::cout << "current step: " << currentstep+1 << "/" << step
 				  << ", lr: " << std::setprecision(10) << learningrate
 				  << ", loss: " << std::fixed << std::setprecision(8) << loss_step
 				  << ", accuracy: " << std::fixed << std::setprecision(2) << std::setw(6) << (double)cnt*100/batchsize << "%";
+//		std::cout << std::endl;
 	}
 	std::cout << std::endl;
 	return history;

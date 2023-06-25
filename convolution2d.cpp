@@ -3,8 +3,6 @@
 #include "layer.hpp"
 #include "convolution2d.hpp"
 
-#include <random>
-
 inline flt& Convolution2D::unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x) {
 	assert(t.size() == this->in_channels * this->in_height * this->in_width);
 	assert(ch < this->in_channels);
@@ -70,21 +68,19 @@ Convolution2D::Convolution2D(
 	case ActivationType::sigmoid:
 		//std::sqrt((flt)2.0/(this->filter_height*this->filter_width*this->in_channels));
 		sigma = std::sqrt(1.0/(this->filter_height * this->filter_width));
-		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<Sigmoid>(new Sigmoid()));
 		break;
 	case ActivationType::relu:
 		sigma = std::sqrt(2.0/(this->filter_height * this->filter_width * this->in_channels));
-		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<ReLU>(new ReLU()));
 		break;
 	default:
 		sigma = 0.05;
-		this->activation = std::static_pointer_cast<Activation>(std::shared_ptr<Linear>(new Linear()));
 		break;
 	}
 	std::random_device seed;
 	std::mt19937 rng(seed());
 	std::normal_distribution<> normaldist(0.0, sigma);
 	for (std::size_t och = 0; och < this->out_channels; och++) {
+		this->bias[och] = normaldist(rng);
 		for (std::size_t ich = 0; ich < this->in_channels; ich++) {
 			for (std::size_t y = 0; y < this->filter_height; y++) {
 				for (std::size_t x = 0; x < this->filter_width; x++) {
@@ -92,9 +88,6 @@ Convolution2D::Convolution2D(
 				}
 			}
 		}
-	}
-	for (std::size_t ch = 0; ch < this->out_channels; ch++) {
-		this->bias[ch] = normaldist(rng);
 	}
 }
 
@@ -133,22 +126,21 @@ tensor_t Convolution2D::forward(tensor_t& data) {
 			}
 		}
 	}
-	return this->activation->forward(ret);
+	return ret;
 }
 
 tensor_t Convolution2D::backward(tensor_t& data) {
-	data = this->activation->backward(data);
 	assert(data.size() == this->lastdata.size());
 	auto batchsize = data.size();
 	auto paddedinputgrad = tensor_t(batchsize, vec_t(this->in_len, 0.0));
 	auto inputgrad = tensor_t(batchsize, vec_t(this->in_channels*this->in_height*this->in_width));
-	this->filter_grads = std::vector<std::vector<std::vector<tensor_t>>>(
+	this->filtergrad = std::vector<std::vector<std::vector<tensor_t>>>(
 		batchsize, std::vector<std::vector<tensor_t>>(
 			this->out_channels, std::vector<tensor_t>(
 				this->in_channels, tensor_t(
 					this->filter_height, vec_t(
 						this->filter_width, 0.0)))));
-	this->bias_grads = tensor_t(batchsize, vec_t(this->out_channels, 0.0));
+	this->biasgrad = tensor_t(batchsize, vec_t(this->out_channels, 0.0));
 	// compute input gradients
 #pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
@@ -192,7 +184,7 @@ tensor_t Convolution2D::backward(tensor_t& data) {
 								filtergrad += this->paddedref(this->lastdata[b], ich, y*h_stride+ky, x*w_stride+kx) * this->outputref(data[b], och, y, x);
 							}
 						}
-						this->filter_grads[b][och][ich][ky][kx] += filtergrad;
+						this->filtergrad[b][och][ich][ky][kx] += filtergrad;
 					}
 				}
 			}
@@ -200,7 +192,7 @@ tensor_t Convolution2D::backward(tensor_t& data) {
 			flt biasgrad = 0.0;
 			for (std::size_t y = 0; y < this->out_height; y++) {
 				for (std::size_t x = 0; x < this->out_width; x++) {
-					this->bias_grads[b][och] += this->outputref(data[b], och, y, x);
+					this->biasgrad[b][och] += this->outputref(data[b], och, y, x);
 				}
 			}
 		}
@@ -209,17 +201,17 @@ tensor_t Convolution2D::backward(tensor_t& data) {
 }
 
 void Convolution2D::update(flt learningrate) {
-	auto batchsize = this->filter_grads.size();
+	auto batchsize = this->filtergrad.size();
 	for (std::size_t b = 0; b < batchsize; b++) {
 		for (std::size_t och = 0; och < this->out_channels; och++) {
 			for (std::size_t ich = 0; ich < this->in_channels; ich++) {
 				for (std::size_t ky = 0; ky < this->filter_height; ky++) {
 					for (std::size_t kx = 0; kx < this->filter_width; kx++) {
-						this->filter[och][ich][ky][kx] -= learningrate * this->filter_grads[b][och][ich][ky][kx];
+						this->filter[och][ich][ky][kx] -= learningrate * this->filtergrad[b][och][ich][ky][kx];
 					}
 				}
 			}
-			this->bias[och] -= learningrate * this->bias_grads[b][och];
+			this->bias[och] -= learningrate * this->biasgrad[b][och];
 		}
 	}
 }

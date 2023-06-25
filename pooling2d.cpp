@@ -123,6 +123,8 @@ tensor_t AveragePooling2D::backward(tensor_t& data) {
 	return inputgrad;
 }
 
+void AveragePooling2D::update(flt learningrate) {}
+
 flt& MaxPooling2D::unpaddedref(vec_t& t, std::size_t ch, std::size_t y, std::size_t x) {
 	assert(t.size() == this->channels * this->in_height * this->in_width);
 	assert(ch < this->channels);
@@ -249,3 +251,5 @@ tensor_t MaxPooling2D::backward(tensor_t& data) {
 	}
 	return inputgrad;
 }
+
+void MaxPooling2D::update(flt learningrate) {}

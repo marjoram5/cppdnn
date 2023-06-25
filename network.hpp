@@ -1,8 +1,8 @@
 #pragma once
 
 #include "util.hpp"
-#include "activation.hpp"
 #include "layer.hpp"
+#include "activation.hpp"
 #include "convolution2d.hpp"
 #include "pooling2d.hpp"
 #include "fullyconnected.hpp"
@@ -14,11 +14,10 @@ private:
 	std::vector<std::shared_ptr<Layer>> obj;
 	std::vector<Layer*> layers;
 	void initloss(LossType losstype);
-	void backward(tensor_t& data, double learningrate);
-
+	void backward(tensor_t& predicted, tensor_t& train, flt learningrate);
 public:
 	Network();
-	tensor_t predict(tensor_t& data);
+	tensor_t forward(tensor_t& data);
 	template<typename T>
 	void push_back(T&& l) {
 		this->obj.push_back(std::make_shared<typename std::remove_reference<T>::type>(l));

@@ -116,7 +116,8 @@ void Images<T>::read_payload() {
 				if constexpr(std::is_integral_v<T>) {
 					pixel = tmp;
 				}else {
-					pixel = (T)tmp/255;
+//					pixel = (T)tmp/255;
+					pixel = tmp > threshold ? 1.0f : -1.0f;
 				}
 			}
 		}
@@ -165,7 +166,7 @@ const std::vector<T>& Labels<T, U>::data() const {
 
 template<typename T, typename U>
 std::vector<std::vector<U>> Labels<T, U>::onehot() const {
-	std::vector<std::vector<U>> mat(this->data_.size(), std::vector<U>(10, 0.0f));
+	std::vector<std::vector<U>> mat(this->data_.size(), std::vector<U>(10, -1.0f));
 	for (std::size_t i = 0; i < this->data_.size(); i++) {
 		mat[i][this->data_[i]] = 1.0f;
 	}

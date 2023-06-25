@@ -66,22 +66,14 @@ Network lenet() {
 
 int main() {
 	std::cout << "loading the test data..." << std::endl;
-	auto mnist_train_images = MNIST::Images<flt>("../mnist/train-images-idx3-ubyte");
-	auto mnist_train_labels = MNIST::Labels<int, flt>("../mnist/train-labels-idx1-ubyte");
+	auto mnist_train_images = MNIST::Images("../mnist/train-images-idx3-ubyte");
+	auto mnist_train_labels = MNIST::Labels("../mnist/train-labels-idx1-ubyte");
 	std::cout << "the train data was loaded" << std::endl;
-	auto num = mnist_train_labels.data().size();
-	auto height = mnist_train_images.data()[0].size();
-	auto width = mnist_train_images.data()[0][0].size();
-	auto train_x = std::vector<std::vector<flt>>(num, std::vector<flt>(width*height));
-	// flatten
-	for (int i = 0; i < num; i++) {
-		for (int j = 0; j < height; j++) {
-			for (int k = 0; k < width; k++) {
-				train_x[i][j*width+k] = mnist_train_images.data()[i][j][k];
-			}
-		}
-	}
-	auto train_y = mnist_train_labels.onehot();
+	auto num = mnist_train_labels.basedata().size();
+	auto height = mnist_train_images.basedata()[0].size();
+	auto width = mnist_train_images.basedata()[0][0].size();
+	auto train_x = mnist_train_images.flatten<MNIST::ImageType::binarytrain>();
+	auto train_y = mnist_train_labels.onehot<MNIST::ImageType::binarytrain>();
 	auto batchsize = 16;
 	auto learningrate = 0.1;
 	auto decay = 0.999;
@@ -94,25 +86,17 @@ int main() {
 	auto history = nn.fit(batchsize, num/batchsize, learningrate, decay, train_x, train_y, LossType::hinge);
 //	return 0;
 	std::cout << "loading the test data..." << std::endl;
-	auto mnist_test_images = MNIST::Images<flt>("../mnist/t10k-images-idx3-ubyte");
-	auto mnist_test_labels = MNIST::Labels<int, flt>("../mnist/t10k-labels-idx1-ubyte");
-	auto testnum = mnist_test_labels.data().size();
-	auto testx = std::vector<std::vector<flt>>(testnum, std::vector<flt>(width*height));
-	// flatten
-	for (int i = 0; i < testnum; i++) {
-		for (int j = 0; j < height; j++) {
-			for (int k = 0; k < width; k++) {
-				testx[i][j*width+k] = mnist_test_images.data()[i][j][k];
-			}
-		}
-	}
+	auto mnist_test_images = MNIST::Images("../mnist/t10k-images-idx3-ubyte");
+	auto mnist_test_labels = MNIST::Labels("../mnist/t10k-labels-idx1-ubyte");
+	auto testnum = mnist_test_labels.basedata().size();
+	auto testx = mnist_test_images.flatten<MNIST::ImageType::binarytrain>();
 	// predict and test
 	std::cout << "testing..." << std::endl;
 	auto predicty = nn.forward(testx);
 	int count = 0;
 	for (int i = 0; i < testnum; i++) {
 		auto predictidx = std::distance(predicty[i].begin(), std::max_element(predicty[i].begin(), predicty[i].end()));
-		count += predictidx == mnist_test_labels.data()[i];
+		count += predictidx == mnist_test_labels.basedata()[i];
 	}
 	std::cout << "test accuracy: " << count << "/" << testnum << " (" << (double)count*100/testnum << "%)" << std::endl;
 	return 0;

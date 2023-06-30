@@ -34,13 +34,13 @@ Network densenet(std::size_t input) {
 Network binarydensenet(std::size_t input) {
 	Network nn;
 	nn.push_back(BinaryFullyConnected(input, 256));
-	nn.push_back(CenterNormalization(256));
+	nn.push_back(BatchNormalization(256));
 	nn.push_back(BinaryAct());
 	nn.push_back(BinaryFullyConnected(256, 256));
-	nn.push_back(CenterNormalization(256));
+	nn.push_back(BatchNormalization(256));
 	nn.push_back(BinaryAct());
 	nn.push_back(BinaryFullyConnected(256, 10));
-	nn.push_back(CenterNormalization(10));
+	nn.push_back(BatchNormalization(10));
 	return nn;
 }
 

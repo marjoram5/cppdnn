@@ -100,7 +100,6 @@ tensor_t BatchNormalization::backward(tensor_t& data) {
 			inputgrad[b][i] += dmu;
 		}
 	}
-//	std::cout << inputgrad[0] << std::endl;
 	return inputgrad;
 }
 
@@ -111,5 +110,87 @@ void BatchNormalization::update(flt learningrate) {
 			this->beta[i] -= learningrate * this->betagrad[b][i];
 		}
 	}
-//	std::cout << this->beta << std::endl;
 }
+
+MeanNormalization::MeanNormalization(std::size_t l) :
+	len(l) {}
+
+tensor_t MeanNormalization::forward(tensor_t& data) {
+	auto batchsize = data.size();
+	auto ret = data;
+#pragma omp parallel for
+	for (std::size_t b = 0; b < batchsize; b++) {
+//		std::cout << "in: " << ret[b] << std::endl;
+		flt mean = 0.0;
+		for (std::size_t i = 0; i < this->len; i++) {
+			mean += ret[b][i];
+		}
+		mean /= ret[b].size();
+//		std::cout << mean << std::endl;
+		for (std::size_t i = 0; i < this->len; i++) {
+			ret[b][i] -= mean;
+		}
+//		std::cout << "out: " << ret[b] << std::endl;
+	}
+	return ret;
+}
+
+tensor_t MeanNormalization::backward(tensor_t& data) {
+	return data;
+}
+
+void MeanNormalization::update(flt learningrate) {}
+
+
+template<typename T>
+std::size_t partition(std::vector<T>& vec, const std::size_t left, const std::size_t right) {
+	auto pivot = vec.at(left);
+	std::swap(vec.at(left), vec.at(right-1));
+	auto tmp = left;
+	for (auto i = left; i < right; i++) {
+		if (vec.at(i) < pivot) {
+			std::swap(vec.at(tmp), vec.at(i));
+			tmp++;
+		}
+	}
+	std::swap(vec.at(right-1), vec.at(tmp));
+	return tmp;
+}
+
+template<typename T>
+T k_th_smallest(std::vector<T> vec, const std::size_t k, std::size_t left, std::size_t right) {
+	const auto left_ = left;
+	while (left != right) {
+		auto tmp = partition(vec, left, right);
+		if (tmp > k+left_) {
+			right = tmp;
+		} else if (tmp < k+left_) {
+			left = tmp+1;
+		}else {
+			break;
+		}
+	}
+	return vec.at(k);
+}
+
+CenterNormalization::CenterNormalization(std::size_t l) :
+	len(l) {}
+
+tensor_t CenterNormalization::forward(tensor_t& data) {
+	auto batchsize = data.size();
+	auto ret = data;
+#pragma omp parallel for
+	for (std::size_t b = 0; b < batchsize; b++) {
+		auto center = k_th_smallest(ret[b], ret[b].size()/2, 0, ret[b].size());
+		for (std::size_t i = 0; i < this->len; i++) {
+			ret[b][i] -= center;
+		}
+	}
+	return ret;
+}
+
+tensor_t CenterNormalization::backward(tensor_t& data) {
+	return data;
+}
+
+void CenterNormalization::update(flt learningrate) {}

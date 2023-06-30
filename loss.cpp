@@ -90,6 +90,7 @@ tensor_t Hinge::backward(tensor_t& y, tensor_t& t) {
 	auto batchsize = y.size();
 	auto len = y[0].size();
 	auto grad = tensor_t(batchsize, vec_t(len, 0.0));
+//	std::cout << grad << std::endl;
 #pragma omp parallel for
 	for (std::size_t b = 0; b < batchsize; b++) {
 		assert(y[b].size() == t[b].size());

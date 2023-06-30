@@ -24,3 +24,23 @@ public:
 	tensor_t backward(tensor_t& data);
 	void update(flt learningrate);
 };
+
+class MeanNormalization : public Layer {
+private:
+	const std::size_t len;
+public:
+	MeanNormalization(std::size_t l);
+	tensor_t forward(tensor_t& data);
+	tensor_t backward(tensor_t& data);
+	void update(flt learningrate);
+};
+
+class CenterNormalization : public Layer {
+private:
+	const std::size_t len;
+public:
+	CenterNormalization(std::size_t l);
+	tensor_t forward(tensor_t& data);
+	tensor_t backward(tensor_t& data);
+	void update(flt learningrate);
+};

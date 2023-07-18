@@ -12,4 +12,6 @@ if(OpenMP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-add_executable(cppdnn ${SOURCES} mnist.cpp)
+add_executable(dense ${SOURCES} mnist_dense.cpp)
+add_executable(lenet ${SOURCES} mnist_lenet.cpp)
+add_executable(bnn ${SOURCES} mnist_bnn.cpp)

@@ -253,3 +253,4 @@ tensor_t MaxPooling2D::backward(tensor_t& data) {
 }
 
 void MaxPooling2D::update(flt learningrate) {}
+
